@@ -4,6 +4,7 @@ from swsscommon import swsscommon
 from sonic_py_common import daemon_base, logger
 from sonic_py_common.device_info import run_command
 
+
 class ApplicationContext:
     def __init__(self):
         self.pid: int = os.getpid()
