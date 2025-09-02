@@ -93,9 +93,6 @@ def initialize_counters():
     """
     Initialize counters.
     """
-    port_entries: Tuple = APP_CONTEXT.appl_db.keys("PORT_TABLE*")
-    APP_CONTEXT.appl_db.hgetall(port_entries[0])
-    APP_CONTEXT.appl_db.hget(port_entries[0], "oper_status")
     for name, oid in APP_CONTEXT.counter_db.hgetall("COUNTERS_PORT_NAME_MAP").items():
         NAME_TO_OID[name] = oid
         OID_TO_NAME[oid] = name

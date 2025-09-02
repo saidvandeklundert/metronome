@@ -109,6 +109,9 @@ def task_set_free_memory():
         "MEMORY",
         [
             ("free_memory_percentage", str(round(free.free_memory_percentage, 2))),
+            ("total_memory_mb", str(round(free.total_memory, 2))),
             ("used_memory_mb", str(round(free.used_memory, 2))),
+            ("free_memory_mb", str(round(free.free_memory, 2))),
+            ("available_memory_mb", str(round(free.available, 2))),
         ],
     )
