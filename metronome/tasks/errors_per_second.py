@@ -123,8 +123,9 @@ def task_set_errors_per_second():
     # initialize OR move new values to old:
     if not NAME_TO_OID:
         initialize_counters()
-    
-    new_to_old(PORT_ERROR_MAPPING)
+        return
+    else:
+        new_to_old(PORT_ERROR_MAPPING)
     # iterate all OIDs and fetch the errors. Set all interesting error values to 'new':
     for oid, interface_name in OID_TO_NAME.items():
         for counter_name, counter_value in APP_CONTEXT.counter_db.hgetall(
