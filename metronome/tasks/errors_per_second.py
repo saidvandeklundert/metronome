@@ -1,6 +1,6 @@
 from metronome import APP_CONTEXT
 
-from typing import Dict, Tuple, Set
+from typing import Dict, Set
 
 from copy import deepcopy
 
@@ -48,7 +48,7 @@ INTERESTING_ERRORS: Set[str] = {
     SAI_PORT_STAT_ETHER_STATS_JABBERS,
     SAI_QUEUE_STAT_DROPPED_PACKETS,
     SAI_QUEUE_STAT_DROPPED_BYTES,
-    SAI_PORT_STAT_ETHER_STATS_TX_NO_ERRORS,  # sentinal value
+    SAI_PORT_STAT_ETHER_STATS_TX_NO_ERRORS,  # sentinal value: TODO: evaluate
 }
 ERRORS_INIT = {k: 0 for k in INTERESTING_ERRORS}
 
@@ -81,7 +81,7 @@ def add_per_second_rate(port_error_mapping: Dict, interval: int) -> None:
     return None
 
 
-def update_interface_errors(interface_name: str, error_data: dict):
+def update_interface_errors(interface_name: str, error_data: dict) -> None:
     """
     Update interface error data in the custom table
     """
@@ -92,7 +92,7 @@ def update_interface_errors(interface_name: str, error_data: dict):
     APP_CONTEXT.logger.log_debug(f"Updated interface errors for {interface_name}")
 
 
-def initialize_counters():
+def initialize_counters() -> None:
     """
     Initialize counters.
     """
@@ -106,8 +106,24 @@ def initialize_counters():
         }
 
 
+def populate_new_values() -> None:
+    """
+    Iterate all OIDs and fetch the counter values.
+
+    Populate the PORT_ERROR_MAPPING with the new counter values.
+    """
+    for oid, interface_name in OID_TO_NAME.items():
+        for counter_name, counter_value in APP_CONTEXT.counter_db.hgetall(
+            f"COUNTERS:{oid}"
+        ).items():
+            if counter_name in INTERESTING_ERRORS:
+                PORT_ERROR_MAPPING[interface_name]["new"][counter_name] = int(
+                    counter_value
+                )
+
+
 @TaskRegistry.register(interval=INTERVAL)
-def task_set_errors_per_second():
+def task_set_errors_per_second() -> None:
     """
     This task follows the following algorithm:
     - initialize mappings between OIDs and port names
@@ -123,18 +139,11 @@ def task_set_errors_per_second():
     # initialize OR move new values to old:
     if not NAME_TO_OID:
         initialize_counters()
+        populate_new_values()
         return
     else:
         new_to_old(PORT_ERROR_MAPPING)
-    # iterate all OIDs and fetch the errors. Set all interesting error values to 'new':
-    for oid, interface_name in OID_TO_NAME.items():
-        for counter_name, counter_value in APP_CONTEXT.counter_db.hgetall(
-            f"COUNTERS:{oid}"
-        ).items():
-            if counter_name in INTERESTING_ERRORS:
-                PORT_ERROR_MAPPING[interface_name]["new"][counter_name] = int(
-                    counter_value
-                )
+    populate_new_values()
     # add error per second:
     add_per_second_rate(PORT_ERROR_MAPPING, INTERVAL.value)
     # update table
