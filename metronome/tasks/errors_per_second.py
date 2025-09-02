@@ -68,15 +68,12 @@ def add_per_second_rate(port_error_mapping: Dict, interval: int) -> None:
             new_err = port_error_mapping[interface_name]["new"][error_name]
             old_err = port_error_mapping[interface_name]["old"][error_name]
             per_second = (new_err - old_err) / interval
-            if per_second != 0:
-                print(interface_name, error_name, per_second)
             port_error_mapping[interface_name]["per-second"][error_name] = int(
                 per_second
             )
             if per_second != 0:
-                print(
-                    "after setting:",
-                    port_error_mapping[interface_name]["per-second"][error_name],
+                APP_CONTEXT.logger.log_error(
+                    f"interface errors on {interface_name} for {error_name}: {per_second} per second",
                 )
     return None
 
@@ -85,12 +82,11 @@ def update_interface_errors(interface_name: str, error_data: dict):
     """
     Update interface error data in the custom table
     """
-    # Convert all values to strings (SONIC tables store string values)
+
     fvs = [(k, str(v)) for k, v in error_data.items()]
 
-    # Set the data in the table
     APP_CONTEXT.interface_errors_table.set(interface_name, fvs)
-    APP_CONTEXT.logger.log_info(f"Updated interface errors for {interface_name}")
+    APP_CONTEXT.logger.log_debug(f"Updated interface errors for {interface_name}")
 
 
 def initialize_counters():
@@ -122,13 +118,13 @@ def task_set_errors_per_second():
 
     All ports are taken into consideration. To count errors incrementing on flapping ports.
     """
-    APP_CONTEXT.logger.log_warning("running task_set_errors_per_second")
+    APP_CONTEXT.logger.log_info("running task_set_errors_per_second")
 
     # initialize OR move new values to old:
     if not NAME_TO_OID:
         initialize_counters()
-    else:
-        new_to_old(PORT_ERROR_MAPPING)
+    
+    new_to_old(PORT_ERROR_MAPPING)
     # iterate all OIDs and fetch the errors. Set all interesting error values to 'new':
     for oid, interface_name in OID_TO_NAME.items():
         for counter_name, counter_value in APP_CONTEXT.counter_db.hgetall(
