@@ -35,6 +35,12 @@ class CPUState:
     software_interrupts: float
     st: float
 
+    @property
+    def total(self)->float:
+        """
+        The cummulative of the user and system value.
+        """
+        return self.user + self.system
 
 def parse_top(output: str) -> Optional[CPUState]:
     """
@@ -85,8 +91,9 @@ def task_set_cpu_usage():
     APP_CONTEXT.custom_table.set(
         "CPU",
         [
+            ("cpu_total", str(round(cpu_state.total, 2))),
             ("cpu_user", str(round(cpu_state.user, 2))),
             ("cpu_system", str(round(cpu_state.system, 2))),
-            ("cpu_idle", str(round(cpu_state.idle, 2))),
+            ("cpu_idle", str(round(cpu_state.idle, 2))),            
         ],
     )
