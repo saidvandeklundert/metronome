@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from metronome import APP_CONTEXT, TaskRegistry, TaskInterval
 
+ROUND_PRECISION = 2
+
 
 @dataclass
 class Free:
@@ -28,7 +30,7 @@ class Free:
         """
         Returns the available memory as a percentage of the total memory
         """
-        return round(self.free_memory / self.total_memory * 100, 2)
+        return round(self.free_memory / self.total_memory * 100, ROUND_PRECISION)
 
 
 def parse_free(output: str) -> Free:
@@ -81,7 +83,6 @@ def get_memory_info() -> Optional[Free]:
     Retrieve device memory information.
     """
     try:
-        # TODO: outside container image, run "sudo docker exec -it sonic-host free -m"
         result = subprocess.run(["free", "-m"], capture_output=True, text=True)
 
         if result.returncode == 0:
@@ -94,7 +95,7 @@ def get_memory_info() -> Optional[Free]:
 
 
 @TaskRegistry.register(interval=TaskInterval.THIRTY_SECONDS)
-def task_set_free_memory():
+def task_set_free_memory() -> None:
     """
     Retrieve the memory that is avaialble on the device and populate STATE_DB with
     this value.
@@ -108,10 +109,13 @@ def task_set_free_memory():
     APP_CONTEXT.custom_table.set(
         "MEMORY",
         [
-            ("free_memory_percentage", str(round(free.free_memory_percentage, 2))),
-            ("total_memory_mb", str(round(free.total_memory, 2))),
-            ("used_memory_mb", str(round(free.used_memory, 2))),
-            ("free_memory_mb", str(round(free.free_memory, 2))),
-            ("available_memory_mb", str(round(free.available, 2))),
+            (
+                "free_memory_percentage",
+                str(round(free.free_memory_percentage, ROUND_PRECISION)),
+            ),
+            ("total_memory_mb", str(round(free.total_memory, ROUND_PRECISION))),
+            ("used_memory_mb", str(round(free.used_memory, ROUND_PRECISION))),
+            ("free_memory_mb", str(round(free.free_memory, ROUND_PRECISION))),
+            ("available_memory_mb", str(round(free.available, ROUND_PRECISION))),
         ],
     )

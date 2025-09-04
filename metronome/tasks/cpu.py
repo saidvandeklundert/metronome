@@ -36,11 +36,12 @@ class CPUState:
     st: float
 
     @property
-    def total(self)->float:
+    def total(self) -> float:
         """
         The cummulative of the user and system value.
         """
         return self.user + self.system
+
 
 def parse_top(output: str) -> Optional[CPUState]:
     """
@@ -79,7 +80,7 @@ def get_cpu_info() -> Optional[CPUState]:
 
 
 @TaskRegistry.register(interval=TaskInterval.THIRTY_SECONDS)
-def task_set_cpu_usage():
+def task_set_cpu_usage() -> None:
     """
     Retrieve the CPU usage that is avaialble on the device and populate STATE_DB with
     this value.
@@ -94,6 +95,6 @@ def task_set_cpu_usage():
             ("cpu_total", str(round(cpu_state.total, 2))),
             ("cpu_user", str(round(cpu_state.user, 2))),
             ("cpu_system", str(round(cpu_state.system, 2))),
-            ("cpu_idle", str(round(cpu_state.idle, 2))),            
+            ("cpu_idle", str(round(cpu_state.idle, 2))),
         ],
     )
