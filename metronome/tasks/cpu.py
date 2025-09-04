@@ -48,7 +48,7 @@ def parse_top(output: str) -> Optional[CPUState]:
     Parses the output of the 'top -n 1 -b' command into an instance of CPUState.
     """
     for line in output.splitlines():
-        if line and line.startswith("%Cpu(s):") and line.endswith("0.0 st"):
+        if line and line.startswith("%Cpu(s):") and "sy," in line:
             chunks = line.split()
             return CPUState(
                 user=float(chunks[1]),
@@ -60,6 +60,7 @@ def parse_top(output: str) -> Optional[CPUState]:
                 software_interrupts=float(chunks[13]),
                 st=float(chunks[15]),
             )
+    APP_CONTEXT.logger.log_error(f"failed to parse top output")
 
 
 def get_cpu_info() -> Optional[CPUState]:
@@ -69,12 +70,10 @@ def get_cpu_info() -> Optional[CPUState]:
     try:
         # TODO: outside container image, run "sudo docker exec -it sonic-host free -m"
         result = subprocess.run(["top", "-n 1", "-b"], capture_output=True, text=True)
-
         if result.returncode == 0:
             return parse_top(result.stdout)
         else:
             APP_CONTEXT.logger.log_error(f"Error running command: {result.stderr}")
-
     except Exception as e:
         APP_CONTEXT.logger.log_error(f"running and parsing 'free -m': {str(e)}")
 
